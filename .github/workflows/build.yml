@@ -18,6 +18,11 @@ jobs:
           gradle-version: 8.4
       - name: Ekstrak proyek
         run: unzip -q "$(ls *.zip | head -1)" -d proj
+      - name: Perbaiki kode
+        working-directory: proj
+        run: |
+          sed -i 's/fun setMode(/fun switchMode(/' app/src/main/java/com/example/mykeyboard/KeyboardService.kt
+          sed -i 's/s\.setMode(/s.switchMode(/' app/src/main/java/com/example/mykeyboard/KeyboardUi.kt
       - name: Build
         working-directory: proj
         run: gradle assembleDebug --no-daemon
