@@ -1,0 +1,49 @@
+name: Build APK
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Jika ada zip proyek (MyKeyboard*.zip) di repo, diekstrak di runner.
+      # Jika tidak ada, build langsung dari isi repo.
+      - name: Extract project zip (if any)
+        id: src
+        run: |
+          ZIP=$(ls MyKeyboard*.zip 2>/dev/null | head -n 1)
+          if [ -n "$ZIP" ]; then
+            mkdir -p build-src
+            unzip -q "$ZIP" -d build-src
+            echo "dir=build-src" >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=." >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Gradle dipasang langsung, jadi tidak perlu file gradlew di proyek
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.5'
+
+      - name: Build debug APK
+        working-directory: ${{ steps.src.outputs.dir }}
+        run: gradle :app:assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyKeyboard-debug
+          path: ${{ steps.src.outputs.dir }}/app/build/outputs/apk/debug/*.apk
